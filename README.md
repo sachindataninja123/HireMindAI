@@ -1,2 +1,2 @@
 # HireMindAI
-It is a platform that takes interview of clients on the basis of his resume totally interview by AI.
+It is a platform that takes interview of clients on the basis of his resume , skills , profession.
