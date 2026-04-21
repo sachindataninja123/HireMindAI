@@ -4,28 +4,29 @@ import Home from "./pages/Home";
 import Auth from "./pages/Auth";
 import { useEffect } from "react";
 import axios from "axios";
+import { useDispatch } from "react-redux";
+import { setUserData } from "./redux/userSlice";
 
 export const ServerURL = "http://localhost:8000";
 
 const App = () => {
- useEffect(() => {
-  const getUser = async () => {
-    try {
-      const result = await axios.get(
-        ServerURL + "/api/user/current-user",
-        {
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    const getUser = async () => {
+      try {
+        const result = await axios.get(ServerURL + "/api/user/current-user", {
           withCredentials: true,
-        }
-      );
+        });
+        dispatch(setUserData(result.data));
+      } catch (error) {
+        console.log(error);
+        dispatch(setUserData(null))
+      }
+    };
 
-      console.log(result.data);
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  getUser();
-}, []);
+    getUser();
+  }, [dispatch]);
 
   return (
     <Routes>
