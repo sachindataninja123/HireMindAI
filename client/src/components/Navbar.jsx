@@ -1,16 +1,44 @@
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { motion } from "motion/react";
 import { FaRobot, FaUser } from "react-icons/fa";
 import { BsCoin } from "react-icons/bs";
-import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { HiOutlineLogout } from "react-icons/hi";
 
 const Navbar = () => {
   const { userData } = useSelector((state) => state.user);
   const [showCreditPopup, setShowCreditPopup] = useState(false);
-  const [showUserPopup, showSetUserPopup] = useState(false);
+  const [showUserPopup, setShowUserPopup] = useState(false);
 
+  const creditRef = useRef();
+  const userRef = useRef();
+
+  const navigate = useNavigate();
   const user = userData?.data || userData;
+
+  // 👉 close on outside click
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        creditRef.current &&
+        !creditRef.current.contains(e.target)
+      ) {
+        setShowCreditPopup(false);
+      }
+
+      if (
+        userRef.current &&
+        !userRef.current.contains(e.target)
+      ) {
+        setShowUserPopup(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () =>
+      document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
     <div className="bg-[#f3f3f3] flex justify-center px-4 pt-6">
@@ -25,25 +53,78 @@ const Navbar = () => {
           <div className="bg-black text-white p-2 rounded-lg">
             <FaRobot size={18} />
           </div>
-          <h1 className="font-semibold  hidden md:block text-lg ">
+          <h1 className="font-semibold hidden md:block text-lg">
             HireMindAI
           </h1>
         </div>
 
         {/* Right side */}
         <div className="flex items-center gap-6">
+          
           {/* Credits */}
-          <button className="flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-full text-md hover:bg-gray-200 transition" onClick={() => setShowCreditPopup
+          <div className="relative" ref={creditRef}>
+            <button
+              onClick={() => {
+                setShowCreditPopup(!showCreditPopup);
+                setShowUserPopup(false);
+              }}
+              className="flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-full text-md hover:bg-gray-200 transition"
+            >
+              <BsCoin size={20} />
+              {user?.credits ?? 0}
+            </button>
 
-          }>
-            <BsCoin size={20} />
-            {user?.credits ?? 0}
-          </button>
+            {showCreditPopup && (
+              <div className="absolute right-0 mt-3 w-64 bg-white shadow-xl border border-gray-200 rounded-xl p-5 z-50">
+                <p className="text-sm text-gray-600 mb-4">
+                  Need more credits to continue interviews?
+                </p>
+                <button
+                  onClick={() => navigate("/pricing")}
+                  className="w-full bg-black text-white py-2 rounded-lg text-sm hover:opacity-90"
+                >
+                  Buy more credits
+                </button>
+              </div>
+            )}
+          </div>
 
           {/* Profile */}
-          <button className="w-9 h-9 bg-black text-white rounded-full flex items-center justify-center font-semibold">
-            {user?.name ? user.name.slice(0, 1).toUpperCase() : <FaUser />}
-          </button>
+          <div className="relative" ref={userRef}>
+            <button
+              onClick={() => {
+                setShowUserPopup(!showUserPopup);
+                setShowCreditPopup(false);
+              }}
+              className="w-9 h-9 bg-black text-white rounded-full flex items-center justify-center font-semibold"
+            >
+              {user?.name ? (
+                user.name.slice(0, 1).toUpperCase()
+              ) : (
+                <FaUser />
+              )}
+            </button>
+
+            {showUserPopup && (
+              <div className="absolute right-0 mt-3 w-48 bg-white shadow-xl border border-gray-200 rounded-xl p-4 z-50">
+                <p className="text-md text-blue-500 font-medium mb-2">
+                  {user?.name || "User"}
+                </p>
+
+                <button
+                  onClick={() => navigate("/history")}
+                  className="w-full text-left text-sm py-2 hover:text-black text-gray-600"
+                >
+                  Interview History
+                </button>
+
+                <button className="w-full text-left text-sm py-2 flex items-center gap-2 text-red-500 hover:opacity-80">
+                  <HiOutlineLogout size={16} />
+                  Logout
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </motion.div>
     </div>
