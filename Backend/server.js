@@ -3,7 +3,7 @@ import { app } from "./src/app.js";
 import dotenv from "dotenv";
 dotenv.config();
 
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 8001;
 connectDB();
 
 app.listen(PORT, () => {

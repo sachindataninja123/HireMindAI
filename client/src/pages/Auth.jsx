@@ -1,18 +1,28 @@
 import React from "react";
+import axios from "axios";
 import { FaRobot } from "react-icons/fa";
 import { IoSparklesSharp } from "react-icons/io5";
 import { motion } from "motion/react";
 import { FcGoogle } from "react-icons/fc";
 import { signInWithPopup } from "firebase/auth";
 import { auth, provider } from "../utils/firebase";
+import { ServerURL } from "../App";
 
 const Auth = () => {
   const handleGoogleAuth = async () => {
     try {
       const res = await signInWithPopup(auth, provider);
-      console.log(res)
+      let User = res.user;
+      let name = User.displayName;
+      let email = User.email;
+      const result = await axios.post(
+        ServerURL + "/api/auth/google",
+        { name, email },
+        { withCredentials: true },
+      );
+      console.log(result.data);
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
   };
 
