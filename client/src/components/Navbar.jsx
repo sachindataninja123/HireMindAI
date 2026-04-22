@@ -1,15 +1,23 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { motion } from "motion/react";
 import { FaRobot, FaUser } from "react-icons/fa";
 import { BsCoin } from "react-icons/bs";
 import { useNavigate } from "react-router-dom";
 import { HiOutlineLogout } from "react-icons/hi";
+import { ServerURL } from "../App";
+import { setUserData } from "../redux/userSlice";
+import axios from "axios";
+import AuthModel from "./AuthModel";
+
 
 const Navbar = () => {
   const { userData } = useSelector((state) => state.user);
   const [showCreditPopup, setShowCreditPopup] = useState(false);
   const [showUserPopup, setShowUserPopup] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
+
+  const disPatch = useDispatch();
 
   const creditRef = useRef();
   const userRef = useRef();
@@ -17,29 +25,36 @@ const Navbar = () => {
   const navigate = useNavigate();
   const user = userData?.data || userData;
 
-  // 👉 close on outside click
+  // close on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (
-        creditRef.current &&
-        !creditRef.current.contains(e.target)
-      ) {
+      if (creditRef.current && !creditRef.current.contains(e.target)) {
         setShowCreditPopup(false);
       }
 
-      if (
-        userRef.current &&
-        !userRef.current.contains(e.target)
-      ) {
+      if (userRef.current && !userRef.current.contains(e.target)) {
         setShowUserPopup(false);
       }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
-    return () =>
-      document.removeEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const handleLogOut = async () => {
+    try {
+      console.log(ServerURL);
+      await axios.get(ServerURL + "/api/auth/logout", {
+        withCredentials: true,
+      });
+      disPatch(setUserData(null));
+      setShowCreditPopup(false);
+      setShowUserPopup(false);
+      navigate("/");
+    } catch (error) {
+      console.log(error);
+    }
+  };
   return (
     <div className="bg-[#f3f3f3] flex justify-center px-4 pt-6">
       <motion.div
@@ -49,22 +64,25 @@ const Navbar = () => {
         className="flex w-full max-w-6xl bg-white rounded-3xl shadow-md border border-gray-200 px-8 py-4 justify-between items-center"
       >
         {/* Logo */}
-        <div className="flex items-center gap-3 cursor-pointer">
+        <div
+          className="flex items-center gap-3 cursor-pointer"
+        >
           <div className="bg-black text-white p-2 rounded-lg">
             <FaRobot size={18} />
           </div>
-          <h1 className="font-semibold hidden md:block text-lg">
-            HireMindAI
-          </h1>
+          <h1 className="font-semibold hidden md:block text-lg">HireMindAI</h1>
         </div>
 
         {/* Right side */}
         <div className="flex items-center gap-6">
-          
           {/* Credits */}
           <div className="relative" ref={creditRef}>
             <button
               onClick={() => {
+                if (!userData) {
+                  setShowAuth(true);
+                  return;
+                }
                 setShowCreditPopup(!showCreditPopup);
                 setShowUserPopup(false);
               }}
@@ -93,16 +111,16 @@ const Navbar = () => {
           <div className="relative" ref={userRef}>
             <button
               onClick={() => {
+                if (!userData) {
+                  setShowAuth(true);
+                  return;
+                }
                 setShowUserPopup(!showUserPopup);
                 setShowCreditPopup(false);
               }}
               className="w-9 h-9 bg-black text-white rounded-full flex items-center justify-center font-semibold"
             >
-              {user?.name ? (
-                user.name.slice(0, 1).toUpperCase()
-              ) : (
-                <FaUser />
-              )}
+              {user?.name ? user.name.slice(0, 1).toUpperCase() : <FaUser />}
             </button>
 
             {showUserPopup && (
@@ -118,7 +136,10 @@ const Navbar = () => {
                   Interview History
                 </button>
 
-                <button className="w-full text-left text-sm py-2 flex items-center gap-2 text-red-500 hover:opacity-80">
+                <button
+                  onClick={handleLogOut}
+                  className="w-full text-left text-sm py-2 flex items-center gap-2 text-red-500 hover:opacity-80"
+                >
                   <HiOutlineLogout size={16} />
                   Logout
                 </button>
@@ -127,6 +148,8 @@ const Navbar = () => {
           </div>
         </div>
       </motion.div>
+
+      {showAuth && <AuthModel onClose={() => setShowAuth(false)} />}
     </div>
   );
 };
