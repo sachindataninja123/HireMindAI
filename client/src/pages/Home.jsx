@@ -20,6 +20,7 @@ import creditImg from "../assets/credit.png";
 import resumeImg from "../assets/resume.png";
 import pdfImg from "../assets/pdf.png";
 import analyticsImg from "../assets/history.png";
+import Footer from "../components/Footer";
 
 const Home = () => {
   const { userData } = useSelector((state) => state.user);
@@ -46,7 +47,7 @@ const Home = () => {
               transition={{ duration: 0.6 }}
               className="text-4xl md:text-6xl font-semibold leading-tight max-w-4xl mx-auto"
             >
-              Practice Interview with
+              Practice Interviews with
               <span className="relative inline-block">
                 <span className="bg-green-100 text-green-600 px-5 py-1 rounded-full">
                   AI Intelligence
@@ -275,7 +276,11 @@ const Home = () => {
                       </div>
 
                       <div className="w-1/2 flex justify-end">
-                        <img src={mode.image} alt={mode.title} className="w-28 h-28 object-contain" />
+                        <img
+                          src={mode.image}
+                          alt={mode.title}
+                          className="w-28 h-28 object-contain"
+                        />
                       </div>
                     </div>
                   </motion.div>
@@ -287,6 +292,8 @@ const Home = () => {
       </div>
 
       {showAuth && <AuthModel onClose={() => setShowAuth(false)} />}
+
+      <Footer />
     </div>
   );
 };
