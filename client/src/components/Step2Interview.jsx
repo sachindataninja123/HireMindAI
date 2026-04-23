@@ -74,6 +74,149 @@ const Step2Interview = ({ interViewData, onFinish }) => {
 
   const videoSource = voiceGender === "male" ? maleVideo : femaleVideo;
 
+  // speak function
+  const speakText = (text) => {
+    return new Promise((resolve) => {
+      if (!window.speechSynthesis || !selectedVoice) {
+        resolve();
+        return;
+      }
+
+      window.speechSynthesis.cancel();
+
+      //add natural pauses after commas and periods
+      const humanText = text.replace(/ , /g, ", ...").replace(/\./g, ". ... ");
+
+      const utterance = new SpeechSynthesisUtterance(humanText);
+
+      utterance.voice = selectedVoice;
+
+      //Human-like pacing
+      utterance.rate = 0.92;
+      utterance.pitch = 1.05;
+      utterance.volume = 1;
+
+      utterance.onstart = () => {
+        setIsAIPlaying(true);
+        stopMic();
+        videoRef.current?.play();
+      };
+
+      utterance.onend = () => {
+        videoRef.current?.pause();
+        videoRef.current.currenTime = 0;
+        setIsAIPlaying(false);
+
+        if (!isMicOn) {
+          startMic();
+        }
+
+        setTimeout(() => {
+          setSubTitle("");
+          resolve();
+        }, 300);
+      };
+
+      setSubTitle(text);
+
+      window.speechSynthesis.speak(utterance);
+    });
+  };
+
+  useEffect(() => {
+    if (!selectedVoice) {
+      return;
+    }
+
+    const runIntro = async () => {
+      if (isIntroPhase) {
+        await speakText(
+          `Hi ${userName}, it's great to meet you today. I hope you're feeling confident and ready.`,
+        );
+
+        await speakText(
+          "I'll ask you a few questions. Just answer naturally, and take your time. Let's begin.",
+        );
+
+        setIsIntroPhase(false);
+      } else if (currentQuestion) {
+        await new Promise((r) => setTimeout(r, 800));
+
+        //if last question (hard level)
+        if (currentIdx === questions.length - 2) {
+          await speakText(
+            "Alright , this one might be a bit more challenging.",
+          );
+        }
+
+        await speakText(currentQuestion.question);
+
+        if (!isMicOn) {
+          startMic();
+        }
+      }
+    };
+
+    runIntro();
+  }, [selectedVoice, isIntroPhase, currentIdx]);
+
+  useEffect(() => {
+    if (isIntroPhase) return;
+    if (!currentQuestion) return;
+
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [isIntroPhase, currentIdx]);
+
+  useEffect(() => {
+    if (!("webkitSpeechRecognition" in window)) return;
+
+    const recognition = new window.webkitSpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.continuous = true;
+    recognition.interimResults = false;
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[event.results.length - 1][0].transcript;
+
+      setAnswer((prev) => prev + " " + transcript);
+    };
+
+    recognitionRef.current = recognition;
+  }, []);
+
+  const startMic = () => {
+    if (recognitionRef.current && !isAIPlaying) {
+      try {
+        recognitionRef.current.start();
+      } catch (error) {}
+    }
+  };
+
+  const stopMic = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
+  };
+
+  const toggleMic = () => {
+    if (!isMicOn) {
+      stopMic();
+    } else {
+      startMic();
+    }
+    setIsMicOn(!isMicOn);
+  };
+
   return (
     <div className="min-h-screen bg-linear-to-br from bg-emerald-50 via-white to-teal-100 flex items-center justify-center p-4 sm:p-6">
       <div className="w-full max-w-338 min-h-[80vh] bg-white rounded-3xl shadow-2xl border border-gray-200 flex flex-col lg:flex-row overflow-hidden">
@@ -92,21 +235,35 @@ const Step2Interview = ({ interViewData, onFinish }) => {
             />
           </div>
 
+          {/* subtitle area */}
+          {subTitle && (
+            <div className="w-full max-w-md bg-gray-50 border border-gray-200 rounded-xl p-4 shadow-sm">
+              <p className="text-gray-700 text-sm sm:text-base font-medium text-center leading-relaxed">
+                {subTitle}
+              </p>
+            </div>
+          )}
+
           {/* Timer Card */}
           <div className="w-full max-w-md bg-white border border-gray-200 rounded-2xl shadow-md p-6 space-y-6">
             {/* Status */}
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-500">Interview Status</span>
-              <span className="text-sm font-semibold text-emerald-600">
-                AI Speaking
-              </span>
+              {isAIPlaying && (
+                <span className="text-sm font-semibold text-emerald-600">
+                  {isAIPlaying ? "AI Speaking" : ""}
+                </span>
+              )}
             </div>
 
             <div className="h-px bg-gray-200"></div>
 
             {/* Timer */}
             <div className="flex justify-center">
-              <Timer timeLeft={30} totalTime={60} />
+              <Timer
+                timeLeft={timeLeft}
+                totalTime={currentQuestion?.timeLimit}
+              />
             </div>
 
             <div className="h-px bg-gray-200"></div>
@@ -138,24 +295,29 @@ const Step2Interview = ({ interViewData, onFinish }) => {
           </h2>
 
           {/* Question Card */}
-          <div className="bg-gray-50 p-4 sm:p-6 rounded-2xl border border-gray-200 shadow-sm mb-6">
-            <p className="text-xs sm:text-sm text-gray-400 mb-2">
-              Question {currentIdx + 1} of {questions.length}
-            </p>
+          {!isIntroPhase && (
+            <div className="bg-gray-50 p-4 sm:p-6 rounded-2xl border border-gray-200 shadow-sm mb-6">
+              <p className="text-xs sm:text-sm text-gray-400 mb-2">
+                Question {currentIdx + 1} of {questions.length}
+              </p>
 
-            <p className="text-base sm:text-lg font-semibold text-gray-800 leading-relaxed">
-              {currentQuestion?.question}
-            </p>
-          </div>
+              <p className="text-base sm:text-lg font-semibold text-gray-800 leading-relaxed">
+                {currentQuestion?.question}
+              </p>
+            </div>
+          )}
 
           {/* Placeholder (space for answer UI later) */}
           <textarea
+            onChange={(e) => setAnswer(e.target.value)}
+            value={answer}
             placeholder="Type your answer here..."
             className="flex-1 bg-gray-100 p-2 sm:p-6 rounded-2xl resize-none outline-none border border-gray-200 focus:ring-2 focus:ring-emerald-500 transition text-gray-800"
           />
 
           <div className="flex items-center gap-4 mt-6">
             <motion.button
+              onClick={toggleMic}
               whileTap={{ scale: 0.9 }}
               className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-full bg-black text-white shadow-lg"
             >
