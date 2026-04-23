@@ -191,10 +191,12 @@ const Home = () => {
               ].map((item, idx) => {
                 return (
                   <motion.div
+
                     initial={{ opacity: 0, y: 60 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: idx * 0.1 }}
                     whileHover={{ scale: 1.02 }}
+                    key={idx}
                     className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm hover:shadow-xl transition-all"
                   >
                     <div className="flex flex-col md:flex-row items-center gap-8">
@@ -263,6 +265,7 @@ const Home = () => {
                     whileInView={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: idx * 0.1 }}
                     whileHover={{ y: -6 }}
+                    key={idx}
                     className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm hover:shadow-xl transition-all"
                   >
                     <div className="flex justify-between items-center gap-6">

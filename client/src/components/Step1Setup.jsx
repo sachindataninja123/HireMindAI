@@ -22,6 +22,9 @@ const Step1Setup = ({ onStart }) => {
   const [analysisDone, setAnalysisDone] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
 
+  const [showAll, setShowAll] = useState(false);
+  const visibleSkills = showAll ? skills : skills.slice(0, 8);
+
   const handleUploadResum = async () => {
     if (!resumeFile || analyzing) return;
     setAnalyzing(true);
@@ -40,8 +43,8 @@ const Step1Setup = ({ onStart }) => {
 
       setRole(result.data.role || "");
       setExperience(result.data.experience || "");
-      setProjects(result.data.projects || "");
-      setSkills(result.data.skills || "");
+      setProjects(result.data.projects || []);
+      setSkills(result.data.skills || []);
       setResumeText(result.data.resumeText || "");
       setAnalysisDone(true);
 
@@ -185,6 +188,59 @@ const Step1Setup = ({ onStart }) => {
                     {analyzing ? "Analyzing..." : "Analyze Resume"}
                   </motion.button>
                 )}
+              </motion.div>
+            )}
+
+            {analysisDone && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-gray-50 border-gray-200 rounded-xl p-5 space-y-4"
+              >
+                <h3 className="text-lg font-semibold text-gray-800">
+                  Resume Analysis Result
+                </h3>
+
+                {/* project section */}
+                {projects.length > 0 && (
+                  <div>
+                    <p className="font-medium text-gray-700 mb-1">Projects:</p>
+                    <ul className="list-disc list-inside text-gray-600 sapce-y-1">
+                      {projects.map((p, i) => (
+                        <li className="line-clamp-1" key={i}>{p}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* skill section */}
+                <div>
+                  <p className="font-medium text-gray-700 mb-2">Skills:</p>
+
+                  {/* Scrollable container */}
+                  <div
+                    className={`flex flex-wrap gap-2 max-h-32 overflow-y-auto pr-2`}
+                  >
+                    {(showAll ? skills : skills.slice(0, 8)).map((s, i) => (
+                      <span
+                        key={i}
+                        className="bg-green-100 text-gray-700 px-3 py-1 rounded-full text-sm"
+                      >
+                        {s}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Show More / Less */}
+                  {skills.length > 8 && (
+                    <button
+                      onClick={() => setShowAll(!showAll)}
+                      className="mt-2 text-sm text-green-600 hover:underline cursor-pointer"
+                    >
+                      {showAll ? "Show Less" : `+${skills.length - 8} more`}
+                    </button>
+                  )}
+                </div>
               </motion.div>
             )}
 
