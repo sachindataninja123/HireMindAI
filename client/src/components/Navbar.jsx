@@ -43,7 +43,7 @@ const Navbar = () => {
 
   const handleLogOut = async () => {
     try {
-      console.log(ServerURL);
+      // console.log(ServerURL);
       await axios.get(ServerURL + "/api/auth/logout", {
         withCredentials: true,
       });
