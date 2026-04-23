@@ -1,18 +1,90 @@
 import React from "react";
 import maleVideo from "../assets/Videos/male-ai.mp4";
 import femaleVideo from "../assets/videos/female-ai.mp4";
+import Timer from "./Timer";
+import { motion } from "motion/react";
+import { FaMicrophone, FaMicrophoneSlash } from "react-icons/fa";
+import { useState } from "react";
+import { useRef } from "react";
+import { useEffect } from "react";
 
 const Step2Interview = ({ interViewData, onFinish }) => {
   const { interviewId, questions, userName } = interViewData;
+  const [isIntroPhase, setIsIntroPhase] = useState(true);
+
+  const [isMicOn, setIsMicOn] = useState(true);
+  const recognitionRef = useRef(null);
+  const [isAIPlaying, setIsAIPlaying] = useState(false);
+
+  const [currentIdx, setCurrentIdx] = useState(0);
+  const [answer, setAnswer] = useState("");
+  const [feedBack, setFeedBack] = useState("");
+  const [timeLeft, setTimeLeft] = useState(questions[0]?.timeLimit || 60);
+
+  const [selectedVoice, setSelectedVoice] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [voiceGender, setVoiceGender] = useState("female");
+  const [subTitle, setSubTitle] = useState("");
+
+  const videoRef = useRef(null);
+
+  const currentQuestion = questions[currentIdx];
+
+  useEffect(() => {
+    const loadVoices = () => {
+      const voices = window.speechSynthesis.getVoices();
+      if (!voices.length) return;
+
+      // Try known female voices first
+      const femaleVoice = voices.find(
+        (v) =>
+          v.name.toLowerCase().includes("zira") ||
+          v.name.toLowerCase().includes("samantha") ||
+          v.name.toLowerCase().includes("female"),
+      );
+
+      if (femaleVoice) {
+        setSelectedVoice(femaleVoice);
+        setVoiceGender("female");
+        return;
+      }
+
+      // Try known male voices
+      const maleVoice = voices.find(
+        (v) =>
+          v.name.toLowerCase().includes("david") ||
+          v.name.toLowerCase().includes("mark") ||
+          v.name.toLowerCase().includes("male"),
+      );
+
+      if (maleVoice) {
+        setSelectedVoice(maleVoice);
+        setVoiceGender("male");
+        return;
+      }
+
+      //fallback : first voice (assume female)
+      setSelectedVoice(voices[0]);
+      setVoiceGender("female");
+    };
+
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+  }, []);
+
+  const videoSource = voiceGender === "male" ? maleVideo : femaleVideo;
 
   return (
     <div className="min-h-screen bg-linear-to-br from bg-emerald-50 via-white to-teal-100 flex items-center justify-center p-4 sm:p-6">
-      <div className="w-full max-w-350 min-h-[80vh] bg-white rounded-3xl shadow-2xl border border-gray-200 flex flex-col bg:flex-row overflow-hidden">
-        {/* video section */}
+      <div className="w-full max-w-338 min-h-[80vh] bg-white rounded-3xl shadow-2xl border border-gray-200 flex flex-col lg:flex-row overflow-hidden">
+        {/* LEFT - VIDEO SECTION */}
         <div className="w-full lg:w-[35%] bg-white flex flex-col items-center p-6 space-y-6 border-r border-gray-200">
-          <div className="w-full mx-w-md rounded-2xl overflow-hidden shadow-xl">
+          {/* Video */}
+          <div className="w-full max-w-md rounded-2xl overflow-hidden shadow-xl">
             <video
-              src={femaleVideo}
+              src={videoSource}
+              key={videoSource}
+              ref={videoRef}
               muted
               playsInline
               preload="auto"
@@ -20,10 +92,9 @@ const Step2Interview = ({ interViewData, onFinish }) => {
             />
           </div>
 
-          {/* subtitle pending */}
-
-          {/* timer area */}
-          <div className="w-full max-w-md bg-white border border-gray-200 rounded-2xl shadow-md p-6 sapce-y-5">
+          {/* Timer Card */}
+          <div className="w-full max-w-md bg-white border border-gray-200 rounded-2xl shadow-md p-6 space-y-6">
+            {/* Status */}
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-500">Interview Status</span>
               <span className="text-sm font-semibold text-emerald-600">
@@ -31,11 +102,72 @@ const Step2Interview = ({ interViewData, onFinish }) => {
               </span>
             </div>
 
-            <div className="h-px bg-gray-200 mt-2"></div>
+            <div className="h-px bg-gray-200"></div>
 
+            {/* Timer */}
             <div className="flex justify-center">
-              
+              <Timer timeLeft={30} totalTime={60} />
             </div>
+
+            <div className="h-px bg-gray-200"></div>
+
+            {/* Stats */}
+            <div className="grid grid-cols-2 gap-6 text-center">
+              <div>
+                <p className="text-2xl font-bold text-emerald-600">
+                  {currentIdx + 1}
+                </p>
+                <p className="text-xs text-gray-400">Current Question</p>
+              </div>
+
+              <div>
+                <p className="text-2xl font-bold text-emerald-600">
+                  {questions.length}
+                </p>
+                <p className="text-xs text-gray-400">Total Questions</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT - TEXT SECTION */}
+        <div className="flex-1 flex flex-col p-4 sm:p-6 md:p-8">
+          {/* Header */}
+          <h2 className="text-xl sm:text-2xl font-bold text-emerald-600 mb-6">
+            AI Smart Interview
+          </h2>
+
+          {/* Question Card */}
+          <div className="bg-gray-50 p-4 sm:p-6 rounded-2xl border border-gray-200 shadow-sm mb-6">
+            <p className="text-xs sm:text-sm text-gray-400 mb-2">
+              Question {currentIdx + 1} of {questions.length}
+            </p>
+
+            <p className="text-base sm:text-lg font-semibold text-gray-800 leading-relaxed">
+              {currentQuestion?.question}
+            </p>
+          </div>
+
+          {/* Placeholder (space for answer UI later) */}
+          <textarea
+            placeholder="Type your answer here..."
+            className="flex-1 bg-gray-100 p-2 sm:p-6 rounded-2xl resize-none outline-none border border-gray-200 focus:ring-2 focus:ring-emerald-500 transition text-gray-800"
+          />
+
+          <div className="flex items-center gap-4 mt-6">
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-full bg-black text-white shadow-lg"
+            >
+              <FaMicrophone size={20} />
+            </motion.button>
+
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              className="flex-1 bg-linear-to-r from-emerald-600 to-teal-500 text-white py-3 sm:py-4 rounded-2xl shadow-lg hover:opacity-90 transition font-semibold"
+            >
+              Submit Answer
+            </motion.button>
           </div>
         </div>
       </div>
