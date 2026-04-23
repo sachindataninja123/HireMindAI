@@ -18,12 +18,12 @@ const InterviewPage = () => {
         />
       )}
 
-      {step === 1 && (
+      {step === 2 && (
         <Step2Interview
           interViewData={interViewData}
           onFinish={(report) => {
             setInterViewData(report);
-            setStep(2);
+            setStep(3);
           }}
         />
       )}
