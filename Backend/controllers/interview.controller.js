@@ -392,7 +392,6 @@ Answer: ${answer}
   }
 };
 
-
 export const finishInterview = async (req, res) => {
   try {
     const { interviewId } = req.body;
@@ -458,6 +457,64 @@ export const finishInterview = async (req, res) => {
     });
   } catch (error) {
     console.log("Finish Interview Error:", error);
+
+    return res.status(500).json({
+      message: "Internal Server Error",
+    });
+  }
+};
+
+export const getMyInterviews = async (req, res) => {
+  try {
+    const interviews = await InterviewModel.findOne({ userId: req.userId })
+      .sort({ createdAt: -1 })
+      .select("role experience mode finalScore status createdAt");
+
+    return res.status(200).json(interviews);
+  } catch (error) {
+    console.log("Failded to Get current Interview :", error);
+
+    return res.status(500).json({
+      message: "Internal Server Error",
+    });
+  }
+};
+
+export const getInterviewReport = async (req, res) => {
+  try {
+    const interview = await InterviewModel.findById(req.params.id);
+
+    if (!interview) {
+      return res.status(400).json({
+        message: "Interview not found!",
+      });
+    }
+
+    const totalQuestions = interview.questions.length;
+
+    let totalConfidence = 0;
+    let totalCommunication = 0;
+    let totalCorrectness = 0;
+
+    interview.questions.forEach((q) => {
+      totalConfidence += q.confidence || 0;
+      totalCommunication += q.communication || 0;
+      totalCorrectness += q.correctness || 0;
+    });
+
+    const avgConfidence = totalConfidence / totalQuestions;
+    const avgCommunication = totalCommunication / totalQuestions;
+    const avgCorrectness = totalCorrectness / totalQuestions;
+
+    return res.json({
+      finalScore: interview.finalScore,
+      confidence: Number(avgConfidence.toFixed(1)),
+      communication: Number(avgCommunication.toFixed(1)),
+      correctness: Number(avgCorrectness.toFixed(1)),
+      questionWiseScore: interview.questions,
+    });
+  } catch (error) {
+    console.log("Failed to get interview Error:", error);
 
     return res.status(500).json({
       message: "Internal Server Error",
