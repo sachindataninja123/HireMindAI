@@ -1,6 +1,6 @@
 import React from 'react'
 
-const Step3Report = ({report}) => {
+const Pricing = () => {
   return (
     <div>
       
@@ -8,4 +8,4 @@ const Step3Report = ({report}) => {
   )
 }
 
-export default Step3Report
+export default Pricing

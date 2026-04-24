@@ -1,11 +1,9 @@
-import React from 'react'
+import React, { useEffect, useState } from "react";
 
 const InterviewReport = () => {
-  return (
-    <div>
-      
-    </div>
-  )
-}
+  return <div>
+    report
+  </div>;
+};
 
-export default InterviewReport
+export default InterviewReport;
