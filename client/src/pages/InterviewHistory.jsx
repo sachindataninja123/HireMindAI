@@ -14,7 +14,7 @@ const InterviewHistory = () => {
       try {
         const result = await axios.get(
           ServerURL + "/api/interview/get-interview",
-          { withCredentials: true }
+          { withCredentials: true },
         );
         setInterviews(result.data);
       } catch (err) {
@@ -34,7 +34,6 @@ const InterviewHistory = () => {
   return (
     <div className="min-h-screen bg-linear-to-br from-gray-50 via-white to-emerald-50 py-10 px-4">
       <div className="max-w-5xl mx-auto">
-
         {/* HEADER */}
         <div className="mb-6 flex items-center gap-4">
           <button
@@ -69,8 +68,8 @@ const InterviewHistory = () => {
               {type === "all"
                 ? "All"
                 : type === "completed"
-                ? "Completed"
-                : "Incomplete"}
+                  ? "Completed"
+                  : "Incomplete"}
             </button>
           ))}
         </div>
@@ -88,17 +87,16 @@ const InterviewHistory = () => {
               <div
                 key={idx}
                 onClick={() => navigate(`/report/${item._id}`)}
-                className="bg-white p-6 rounded-2xl border border-gray-200  shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer"
+                className="bg-white p-4 sm:p-5 md:p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer"
               >
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                  
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                   {/* LEFT */}
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-800">
+                  <div className="flex-1">
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-800">
                       {item.role}
                     </h3>
 
-                    <p className="text-gray-500 text-sm mt-1">
+                    <p className="text-gray-500 text-xs sm:text-sm mt-1">
                       {item.experience} • {item.mode}
                     </p>
 
@@ -108,22 +106,24 @@ const InterviewHistory = () => {
                   </div>
 
                   {/* RIGHT */}
-                  <div className="flex items-center gap-8">
-                    
+                  <div className="flex items-center justify-between md:justify-end gap-4 sm:gap-6">
                     {/* SCORE */}
-                    <div className="text-right">
-                      <p className="text-2xl font-bold text-emerald-600">
+                    <div className="text-left md:text-right">
+                      <p className="text-lg sm:text-xl md:text-2xl font-bold text-emerald-600">
                         {item.finalScore || 0}
-                        <span className="text-sm text-gray-400"> / 10</span>
+                        <span className="text-xs sm:text-sm text-gray-400">
+                          {" "}
+                          / 10
+                        </span>
                       </p>
-                      <p className="text-xs text-gray-400">
+                      <p className="text-[10px] sm:text-xs text-gray-400">
                         Overall Score
                       </p>
                     </div>
 
                     {/* STATUS */}
                     <span
-                      className={`px-4 py-1 rounded-full text-xs font-medium ${
+                      className={`px-3 sm:px-4 py-1 rounded-full text-[10px] sm:text-xs font-medium whitespace-nowrap ${
                         item.status === "completed"
                           ? "bg-emerald-100 text-emerald-700"
                           : "bg-yellow-100 text-yellow-700"
@@ -132,7 +132,6 @@ const InterviewHistory = () => {
                       {item.status}
                     </span>
                   </div>
-
                 </div>
               </div>
             ))}
