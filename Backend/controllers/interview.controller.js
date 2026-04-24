@@ -291,7 +291,7 @@ export const submitAnswer = async (req, res) => {
     }
 
     // if time limit exceeded
-    if (timetaken > question.timeLimit) {
+    if (timeTaken > question.timeLimit) {
       question.score = 0;
       question.feedback = "Time linmit exceeded. Answer not evaluated";
       question.answer = answer;
@@ -391,6 +391,7 @@ Answer: ${answer}
     });
   }
 };
+
 
 export const finishInterview = async (req, res) => {
   try {

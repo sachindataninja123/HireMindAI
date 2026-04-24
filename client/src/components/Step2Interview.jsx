@@ -7,18 +7,23 @@ import { FaMicrophone, FaMicrophoneSlash } from "react-icons/fa";
 import { useState } from "react";
 import { useRef } from "react";
 import { useEffect } from "react";
+import axios from "axios";
+import { ServerURL } from "../App";
+import { BsArrowRight } from "react-icons/bs";
 
 const Step2Interview = ({ interViewData, onFinish }) => {
-  const { interviewId, questions, userName } = interViewData;
+  const { InterviewId, questions, userName } = interViewData;
+
   const [isIntroPhase, setIsIntroPhase] = useState(true);
 
   const [isMicOn, setIsMicOn] = useState(true);
   const recognitionRef = useRef(null);
   const [isAIPlaying, setIsAIPlaying] = useState(false);
+  const isMicOnRef = useRef(true);
 
   const [currentIdx, setCurrentIdx] = useState(0);
   const [answer, setAnswer] = useState("");
-  const [feedBack, setFeedBack] = useState("");
+  const [feedback, setFeedback] = useState("");
   const [timeLeft, setTimeLeft] = useState(questions[0]?.timeLimit || 60);
 
   const [selectedVoice, setSelectedVoice] = useState(null);
@@ -75,6 +80,53 @@ const Step2Interview = ({ interViewData, onFinish }) => {
   const videoSource = voiceGender === "male" ? maleVideo : femaleVideo;
 
   // speak function
+  // const speakText = (text) => {
+  //   return new Promise((resolve) => {
+  //     if (!window.speechSynthesis || !selectedVoice) {
+  //       resolve();
+  //       return;
+  //     }
+
+  //     window.speechSynthesis.cancel();
+
+  //     //add natural pauses after commas and periods
+  //     const humanText = text.replace(/ , /g, ", ...").replace(/\./g, ". ... ");
+
+  //     const utterance = new SpeechSynthesisUtterance(humanText);
+
+  //     utterance.voice = selectedVoice;
+
+  //     //Human-like pacing
+  //     utterance.rate = 0.92;
+  //     utterance.pitch = 1.05;
+  //     utterance.volume = 1;
+
+  //     utterance.onstart = () => {
+  //       setIsAIPlaying(true);
+  //       stopMic();
+  //       videoRef.current?.play();
+  //     };
+
+  //     utterance.onend = () => {
+  //       videoRef.current?.pause();
+  //       videoRef.current.currentTime = 0;
+  //       setIsAIPlaying(false);
+
+  //       if (isMicOnRef.current) {
+  //         startMic();
+  //       }
+
+  //       setTimeout(() => {
+  //         setSubTitle("");
+  //         resolve();
+  //       }, 300);
+  //     };
+
+  //     setSubTitle(text);
+
+  //     window.speechSynthesis.speak(utterance);
+  //   });
+  // };
   const speakText = (text) => {
     return new Promise((resolve) => {
       if (!window.speechSynthesis || !selectedVoice) {
@@ -84,16 +136,19 @@ const Step2Interview = ({ interViewData, onFinish }) => {
 
       window.speechSynthesis.cancel();
 
-      //add natural pauses after commas and periods
-      const humanText = text.replace(/ , /g, ", ...").replace(/\./g, ". ... ");
+      // 🧠 Natural pauses
+      const humanText = text
+        .replace(/,/g, ", ...")
+        .replace(/\./g, ". ...")
+        .replace(/\?/g, "? ...");
 
       const utterance = new SpeechSynthesisUtterance(humanText);
 
       utterance.voice = selectedVoice;
 
-      //Human-like pacing
-      utterance.rate = 0.92;
-      utterance.pitch = 1.05;
+      // 🎯 Natural voice tuning
+      utterance.rate = 0.85;
+      utterance.pitch = voiceGender === "female" ? 1.1 : 0.9;
       utterance.volume = 1;
 
       utterance.onstart = () => {
@@ -104,11 +159,12 @@ const Step2Interview = ({ interViewData, onFinish }) => {
 
       utterance.onend = () => {
         videoRef.current?.pause();
-        videoRef.current.currenTime = 0;
+        videoRef.current.currentTime = 0;
+
         setIsAIPlaying(false);
 
-        if (!isMicOn) {
-          startMic();
+        if (isMicOnRef.current) {
+          startMic(); // ✅ resume listening
         }
 
         setTimeout(() => {
@@ -119,7 +175,13 @@ const Step2Interview = ({ interViewData, onFinish }) => {
 
       setSubTitle(text);
 
-      window.speechSynthesis.speak(utterance);
+      // 🧠 Thinking delay (real feel)
+      setTimeout(
+        () => {
+          window.speechSynthesis.speak(utterance);
+        },
+        600 + Math.random() * 500,
+      );
     });
   };
 
@@ -178,27 +240,112 @@ const Step2Interview = ({ interViewData, onFinish }) => {
   }, [isIntroPhase, currentIdx]);
 
   useEffect(() => {
-    if (!("webkitSpeechRecognition" in window)) return;
+    if (!isIntroPhase && currentQuestion) {
+      setTimeLeft(currentQuestion.timeLimit || 60);
+    }
+  }, [currentIdx]);
+
+  // useEffect(() => {
+  //   if (!("webkitSpeechRecognition" in window)) return;
+
+  //   const recognition = new window.webkitSpeechRecognition();
+  //   recognition.lang = "en-US";
+  //   recognition.continuous = true;
+  //   recognition.interimResults = false;
+
+  //   recognition.onresult = (event) => {
+  //     const transcript = event.results[event.results.length - 1][0].transcript;
+
+  //     setAnswer((prev) => prev + " " + transcript);
+  //   };
+
+  //   recognitionRef.current = recognition;
+  // }, []);
+
+  // ===============================
+  // 🎤 SPEECH RECOGNITION SETUP
+  // ===============================
+  useEffect(() => {
+    if (!("webkitSpeechRecognition" in window)) {
+      alert("Speech Recognition not supported in this browser");
+      return;
+    }
 
     const recognition = new window.webkitSpeechRecognition();
+
     recognition.lang = "en-US";
     recognition.continuous = true;
-    recognition.interimResults = false;
+    recognition.interimResults = true; // ✅ LIVE TYPING
+
+    let silenceTimer;
 
     recognition.onresult = (event) => {
-      const transcript = event.results[event.results.length - 1][0].transcript;
+      let finalTranscript = "";
+      let interimTranscript = "";
 
-      setAnswer((prev) => prev + " " + transcript);
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+
+        if (event.results[i].isFinal) {
+          finalTranscript += transcript;
+        } else {
+          interimTranscript += transcript;
+        }
+      }
+
+      // update answer (final only)
+      if (finalTranscript) {
+        setAnswer((prev) => prev + " " + finalTranscript);
+      }
+
+      // 🧠 AUTO STOP AFTER SILENCE
+      clearTimeout(silenceTimer);
+      silenceTimer = setTimeout(() => {
+        stopMic();
+      }, 2000);
+    };
+
+    recognition.onerror = (event) => {
+      console.log("Mic Error:", event.error);
+
+      if (event.error === "not-allowed") {
+        alert("Please allow microphone access");
+      }
     };
 
     recognitionRef.current = recognition;
   }, []);
 
-  const startMic = () => {
-    if (recognitionRef.current && !isAIPlaying) {
-      try {
+  // const startMic = () => {
+
+  //   if (recognitionRef.current && !isAIPlaying) {
+  //     try {
+  //       recognitionRef.current.start();
+  //     } catch (error) {}
+  //   }
+  // };
+
+  // const stopMic = () => {
+  //   if (recognitionRef.current) {
+  //     recognitionRef.current.stop();
+  //   }
+  // };
+
+  const startMic = async () => {
+    try {
+      await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
+
+      if (recognitionRef.current && !isAIPlaying) {
         recognitionRef.current.start();
-      } catch (error) {}
+      }
+    } catch (err) {
+      console.log("Mic Permission Error:", err);
     }
   };
 
@@ -209,13 +356,93 @@ const Step2Interview = ({ interViewData, onFinish }) => {
   };
 
   const toggleMic = () => {
-    if (!isMicOn) {
+    if (isMicOn) {
       stopMic();
     } else {
       startMic();
     }
+
     setIsMicOn(!isMicOn);
+    isMicOnRef.current = !isMicOn;
   };
+
+  const submitAnswer = async () => {
+    if (isSubmitting) return;
+    stopMic();
+    setIsSubmitting(true);
+
+    try {
+      const result = await axios.post(
+        ServerURL + "/api/interview/submit-answer",
+        {
+          interviewId: InterviewId,
+          questionIndex: currentIdx,
+          answer,
+          timeTaken: currentQuestion.timeLimit - timeLeft,
+        },
+        { withCredentials: true },
+      );
+      setFeedback(result.data.feedback);
+      speakText(result.data.feedback);
+      setIsSubmitting(false);
+    } catch (error) {
+      console.log(error);
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleNext = async () => {
+    setAnswer("");
+    setFeedback("");
+
+    if (currentIdx + 1 >= questions.length) {
+      finishInterview();
+      return;
+    }
+
+    await speakText("Alright , let's move to the next question.");
+
+    setCurrentIdx(currentIdx + 1);
+    setTimeout(() => {
+      if (isMicOn) startMic();
+    }, 500);
+  };
+
+  const finishInterview = async () => {
+    stopMic();
+    setIsMicOn(false);
+    try {
+      const result = await axios.post(
+        ServerURL + "/api/interview/finish",
+        { interviewId: InterviewId },
+        { withCredentials: true },
+      );
+
+      console.log(result.data);
+      onFinish(result.data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    if (isIntroPhase) return;
+    if (!currentQuestion) return;
+
+    if (timeLeft === 0 && !isSubmitting && !feedback) {
+      submitAnswer();
+    }
+  }, [timeLeft]);
+
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+        recognitionRef.current.abort();
+      }
+      window.speechSynthesis.cancel();
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-linear-to-br from bg-emerald-50 via-white to-teal-100 flex items-center justify-center p-4 sm:p-6">
@@ -315,22 +542,85 @@ const Step2Interview = ({ interViewData, onFinish }) => {
             className="flex-1 bg-gray-100 p-2 sm:p-6 rounded-2xl resize-none outline-none border border-gray-200 focus:ring-2 focus:ring-emerald-500 transition text-gray-800"
           />
 
-          <div className="flex items-center gap-4 mt-6">
-            <motion.button
-              onClick={toggleMic}
-              whileTap={{ scale: 0.9 }}
-              className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-full bg-black text-white shadow-lg"
-            >
-              <FaMicrophone size={20} />
-            </motion.button>
+          {!feedback ? (
+            // <div className="flex items-center gap-4 mt-6">
+            //   <motion.button
+            //     onClick={toggleMic}
+            //     whileTap={{ scale: 0.9 }}
+            //     className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-full bg-black text-white shadow-lg"
+            //   >
+            //     {isMicOn ? (
+            //       <FaMicrophone size={20} />
+            //     ) : (
+            //       <FaMicrophoneSlash size={20} />
+            //     )}
+            //   </motion.button>
 
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              className="flex-1 bg-linear-to-r from-emerald-600 to-teal-500 text-white py-3 sm:py-4 rounded-2xl shadow-lg hover:opacity-90 transition font-semibold"
+            //   <motion.button
+            //     onClick={submitAnswer}
+            //     disabled={isSubmitting}
+            //     whileTap={{ scale: 0.95 }}
+            //     className="flex-1 bg-linear-to-r from-emerald-600 to-teal-500 text-white py-3 sm:py-4 rounded-2xl shadow-lg hover:opacity-90 transition font-semibold disabled:bg-gray-500"
+            //   >
+            //     {isSubmitting ? "Submitting..." : "Submit Answer"}
+            //   </motion.button>
+            // </div>
+
+            <div className="flex items-center gap-4 mt-6">
+              {/* 🎤 MIC BUTTON */}
+              <motion.button
+                onClick={toggleMic}
+                whileTap={{ scale: 0.9 }}
+                className={`w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-full shadow-lg transition ${
+                  isMicOn
+                    ? "bg-emerald-600 hover:bg-emerald-700"
+                    : "bg-gray-400 hover:bg-gray-500"
+                } text-white`}
+              >
+                {isMicOn ? (
+                  <FaMicrophone size={20} />
+                ) : (
+                  <FaMicrophoneSlash size={20} />
+                )}
+              </motion.button>
+
+              {/* 🟢 MIC STATUS */}
+              <div className="flex items-center gap-2 min-w-27.5">
+                <div
+                  className={`w-3 h-3 rounded-full ${
+                    isMicOn ? "bg-emerald-500 animate-pulse" : "bg-gray-400"
+                  }`}
+                />
+                <span className="text-sm text-gray-500">
+                  {isMicOn ? "Listening..." : "Mic Off"}
+                </span>
+              </div>
+
+              {/* 🚀 SUBMIT BUTTON */}
+              <motion.button
+                onClick={submitAnswer}
+                disabled={isSubmitting}
+                whileTap={{ scale: 0.95 }}
+                className="flex-1 bg-linear-to-r from-emerald-600 to-teal-500 text-white py-3 sm:py-4 rounded-2xl shadow-lg hover:opacity-90 transition font-semibold disabled:bg-gray-500 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? "Submitting..." : "Submit Answer"}
+              </motion.button>
+            </div>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="mt-6 bg-emerald-50 border border-emerald-200 p-5 rounded-2xl shadow-sm"
             >
-              Submit Answer
-            </motion.button>
-          </div>
+              <p className="text-emerald-700 font-medium mb-4">{feedback}</p>
+              <button
+                onClick={handleNext}
+                className="w-full bg-linear-to-r from-emerald-600 to-teal-500 text-white py-3 rounded-xl shadow-md hover:opacity-90 transition flex items-center justify-center gap-1"
+              >
+                Next Question <BsArrowRight size={18} />
+              </button>
+            </motion.div>
+          )}
         </div>
       </div>
     </div>
