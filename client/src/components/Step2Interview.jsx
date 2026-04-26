@@ -10,6 +10,7 @@ import { useEffect } from "react";
 import axios from "axios";
 import { ServerURL } from "../App";
 import { BsArrowRight } from "react-icons/bs";
+import { useNavigate } from "react-router-dom";
 
 const Step2Interview = ({ interViewData, onFinish }) => {
   const { InterviewId, questions, userName } = interViewData;
@@ -34,6 +35,7 @@ const Step2Interview = ({ interViewData, onFinish }) => {
   const videoRef = useRef(null);
 
   const currentQuestion = questions[currentIdx];
+  const navigate = useNavigate();
 
   useEffect(() => {
     const loadVoices = () => {
@@ -316,8 +318,6 @@ const Step2Interview = ({ interViewData, onFinish }) => {
     recognitionRef.current = recognition;
   }, []);
 
-
-
   const startMic = async () => {
     try {
       await navigator.mediaDevices.getUserMedia({
@@ -372,6 +372,11 @@ const Step2Interview = ({ interViewData, onFinish }) => {
       setFeedback(result.data.feedback);
       speakText(result.data.feedback);
       setIsSubmitting(false);
+
+      // ✅ AUTO MOVE AFTER FEEDBACK
+      setTimeout(() => {
+        handleNext();
+      }, 1000);
     } catch (error) {
       console.log(error);
       setIsSubmitting(false);
@@ -405,7 +410,8 @@ const Step2Interview = ({ interViewData, onFinish }) => {
         { withCredentials: true },
       );
 
-      console.log(result.data);
+      // console.log(result.data);
+      navigate(`/report/${InterviewId}`);
       onFinish(result.data);
     } catch (error) {
       console.log(error);
@@ -413,10 +419,9 @@ const Step2Interview = ({ interViewData, onFinish }) => {
   };
 
   useEffect(() => {
-    if (isIntroPhase) return;
-    if (!currentQuestion) return;
+    if (isIntroPhase || !currentQuestion) return;
 
-    if (timeLeft === 0 && !isSubmitting && !feedback) {
+    if (timeLeft <= 0 && !isSubmitting && !feedback) {
       submitAnswer();
     }
   }, [timeLeft]);
@@ -530,29 +535,6 @@ const Step2Interview = ({ interViewData, onFinish }) => {
           />
 
           {!feedback ? (
-            // <div className="flex items-center gap-4 mt-6">
-            //   <motion.button
-            //     onClick={toggleMic}
-            //     whileTap={{ scale: 0.9 }}
-            //     className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-full bg-black text-white shadow-lg"
-            //   >
-            //     {isMicOn ? (
-            //       <FaMicrophone size={20} />
-            //     ) : (
-            //       <FaMicrophoneSlash size={20} />
-            //     )}
-            //   </motion.button>
-
-            //   <motion.button
-            //     onClick={submitAnswer}
-            //     disabled={isSubmitting}
-            //     whileTap={{ scale: 0.95 }}
-            //     className="flex-1 bg-linear-to-r from-emerald-600 to-teal-500 text-white py-3 sm:py-4 rounded-2xl shadow-lg hover:opacity-90 transition font-semibold disabled:bg-gray-500"
-            //   >
-            //     {isSubmitting ? "Submitting..." : "Submit Answer"}
-            //   </motion.button>
-            // </div>
-
             <div className="flex items-center gap-4 mt-6">
               {/* 🎤 MIC BUTTON */}
               <motion.button
