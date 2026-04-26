@@ -316,20 +316,7 @@ const Step2Interview = ({ interViewData, onFinish }) => {
     recognitionRef.current = recognition;
   }, []);
 
-  // const startMic = () => {
 
-  //   if (recognitionRef.current && !isAIPlaying) {
-  //     try {
-  //       recognitionRef.current.start();
-  //     } catch (error) {}
-  //   }
-  // };
-
-  // const stopMic = () => {
-  //   if (recognitionRef.current) {
-  //     recognitionRef.current.stop();
-  //   }
-  // };
 
   const startMic = async () => {
     try {

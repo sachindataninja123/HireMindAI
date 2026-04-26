@@ -13,6 +13,8 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 const Step3Report = ({ report }) => {
   const navigate = useNavigate();
@@ -61,6 +63,256 @@ const Step3Report = ({ report }) => {
   const score = finalScore;
   const percentage = (score / 10) * 100;
 
+  // const downloadPDF = () => {
+  //   const doc = new jsPDF("p", "mm", "a4");
+
+  //   const pageWidth = doc.internal.pageSize.getWidth();
+  //   const margin = 20;
+  //   const contentWidth = pageWidth - margin * 2;
+
+  //   let currentY = 25;
+
+  //   //title
+  //   doc.setFont("helvetica", "bold");
+  //   doc.setFontSize(20);
+  //   doc.setTextColor(34, 197, 94);
+  //   doc.text("AI Interview Performance Report", pageWidth / 2, currentY, {
+  //     align: "center",
+  //   });
+
+  //   currentY += 5;
+
+  //   //underline
+  //   doc.setDrawColor(34, 197, 94);
+  //   doc.line(margin, currentY + 2, pageWidth - margin, currentY + 2);
+
+  //   currentY += 15;
+
+  //   //final score box
+
+  //   doc.setFillColor(240, 253, 244);
+  //   doc.roundedRect(margin, currentY, contentWidth, 20, 4, 4, "F");
+
+  //   doc.setFontSize(14);
+  //   doc.setTextColor(0, 0, 0);
+  //   doc.text(`Final Score : ${finalScore} / 10`, pageWidth / 2, currentY + 12, {
+  //     align: "center",
+  //   });
+
+  //   currentY += 30;
+
+  //   // skills box
+  //   doc.setFillColor(249, 250, 251);
+  //   doc.roundedRect(margin, currentY, contentWidth, 30, 4, 4, "F");
+
+  //   doc.setFontSize(12);
+
+  //   doc.text(`Confidence ${confidence}`, margin + 10, currentY + 10);
+  //   doc.text(`Communication : ${communication}`, margin + 10, currentY + 18);
+  //   doc.text(`Correctness : ${correctness}`, margin + 10, currentY + 26);
+
+  //   currentY += 45;
+
+  //   //advice
+  //   let advice = "";
+  //   if (finalScore >= 8) {
+  //     advice =
+  //       "Excellent performance. Maintain confidence and structure. Continue refining clarity and supporting answers with strong real-world examples.";
+  //   } else if (finalScore >= 5) {
+  //     advice =
+  //       "Good foundation shown. Improve clarity and structure. Practice delivering concise , confident answers with stronger supporting examples.";
+  //   } else {
+  //     advice =
+  //       "Significant improvement required. Focus on structured thinking, clarity and confident delivery. Practice answering aloud regularly.";
+  //   }
+
+  //   doc.setFillColor(255, 255, 255);
+  //   doc.setDrawColor(220);
+  //   doc.roundedRect(margin, currentY, contentWidth, 35, 4, 4);
+
+  //   doc.setFont("helvetica", "bold");
+  //   doc.text("Professional Advice", margin + 10, currentY + 10);
+
+  //   doc.setFont("helvetica", "normal");
+  //   doc.setFontSize(11);
+
+  //   const splitAdvice = doc.splitTextToSize(advice, contentWidth - 20);
+  //   doc.text(splitAdvice, margin + 10, currentY + 20);
+
+  //   currentY += 50;
+
+  //   //question table
+  //   autoTable(doc, {
+  //     startY: currentY,
+  //     margin: { left: margin, right: margin },
+  //     head: [["#", "Question", "Score", "Feedback"]],
+  //     body: questionWiseScore.map((q, i) => [
+  //       `${i + 1}`,
+  //       q.question,
+  //       `${q.score} / 10`,
+  //       q.feedback,
+  //     ]),
+
+  //     styles: {
+  //       fontSize: 9,
+  //       cellPadding: 5,
+  //       valign: "top",
+  //     },
+  //     headStyles: {
+  //       fillColor: [34, 197, 94],
+  //       textColor: 255,
+  //       halign: "center",
+  //     },
+  //     columnStyles: {
+  //       0: { cellWidth: 10, halign: "center" }, //index
+  //       1: { cellWidth: 55 },
+  //       2: { cellWidth: 20, halign: "center" },
+  //       3: { cellWidth: "auto" },
+  //     },
+
+  //     alternateRowStyles: {
+  //       fillColor: [249, 250, 251],
+  //     },
+  //   });
+
+  //   doc.save("AI_Interview_Report.pdf");
+  // };
+
+  const downloadPDF = () => {
+  const doc = new jsPDF("p", "mm", "a4");
+
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 20;
+  const contentWidth = pageWidth - margin * 2;
+
+  let currentY = 25;
+
+  // ===== TITLE =====
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(20);
+  doc.setTextColor(34, 197, 94);
+  doc.text("AI Interview Performance Report", pageWidth / 2, currentY, {
+    align: "center",
+  });
+
+  currentY += 6;
+
+  doc.setDrawColor(34, 197, 94);
+  doc.setLineWidth(0.8);
+  doc.line(margin, currentY, pageWidth - margin, currentY);
+
+  currentY += 15;
+
+  // ===== FINAL SCORE =====
+  doc.setFillColor(240, 253, 244);
+  doc.roundedRect(margin, currentY, contentWidth, 20, 4, 4, "F");
+
+  doc.setFontSize(14);
+  doc.setTextColor(0, 0, 0);
+  doc.text(
+    `Final Score : ${finalScore ?? 0} / 10`,
+    pageWidth / 2,
+    currentY + 12,
+    { align: "center" }
+  );
+
+  currentY += 30;
+
+  // ===== SKILLS =====
+  doc.setFillColor(249, 250, 251);
+  doc.roundedRect(margin, currentY, contentWidth, 30, 4, 4, "F");
+
+  doc.setFontSize(12);
+
+  doc.text(`Confidence: ${confidence ?? 0}`, margin + 10, currentY + 10);
+  doc.text(`Communication: ${communication ?? 0}`, margin + 10, currentY + 18);
+  doc.text(`Correctness: ${correctness ?? 0}`, margin + 10, currentY + 26);
+
+  currentY += 45;
+
+  // ===== ADVICE =====
+  let advice = "";
+
+  if (finalScore >= 8) {
+    advice =
+      "Excellent performance. Maintain confidence and structure. Continue refining clarity with strong real-world examples.";
+  } else if (finalScore >= 5) {
+    advice =
+      "Good foundation. Improve clarity and structure. Practice concise and confident answers.";
+  } else {
+    advice =
+      "Significant improvement required. Focus on clarity, structure, and confidence. Practice regularly.";
+  }
+
+  const splitAdvice = doc.splitTextToSize(advice, contentWidth - 20);
+  const adviceHeight = splitAdvice.length * 6 + 12;
+
+  doc.setDrawColor(220);
+  doc.roundedRect(margin, currentY, contentWidth, adviceHeight, 4, 4);
+
+  doc.setFont("helvetica", "bold");
+  doc.text("Professional Advice", margin + 10, currentY + 8);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(11);
+  doc.text(splitAdvice, margin + 10, currentY + 16);
+
+  currentY += adviceHeight + 10;
+
+  // ===== TABLE =====
+  autoTable(doc, {
+    startY: currentY,
+    margin: { left: margin, right: margin },
+
+    head: [["#", "Question", "Score", "Feedback"]],
+
+    body: questionWiseScore.map((q, i) => [
+      `${i + 1}`,
+      q.question || "N/A",
+      `${q.score ?? 0} / 10`,
+      q.feedback || "No feedback",
+    ]),
+
+    styles: {
+      fontSize: 9,
+      cellPadding: 4,
+      valign: "top",
+      overflow: "linebreak", // 🔥 IMPORTANT FIX
+    },
+
+    headStyles: {
+      fillColor: [34, 197, 94],
+      textColor: 255,
+      halign: "center",
+      fontStyle: "bold",
+    },
+
+    columnStyles: {
+      0: { cellWidth: 10, halign: "center" },
+      1: { cellWidth: 55 },
+      2: { cellWidth: 20, halign: "center" },
+      3: { cellWidth: "auto" },
+    },
+
+    alternateRowStyles: {
+      fillColor: [249, 250, 251],
+    },
+
+    didDrawPage: (data) => {
+      // Footer
+      doc.setFontSize(9);
+      doc.setTextColor(150);
+      doc.text(
+        `Page ${doc.internal.getNumberOfPages()}`,
+        pageWidth - 30,
+        doc.internal.pageSize.height - 10
+      );
+    },
+  });
+
+  doc.save("AI_Interview_Report.pdf");
+};
+
   return (
     <div className="min-h-screen bg-linear-to-br from-white to-green-50 px-4 sm:px-6 lg:px-12 py-8 max-w-7xl mx-auto">
       {/* HEADER */}
@@ -83,7 +335,7 @@ const Step3Report = ({ report }) => {
           </div>
         </div>
 
-        <button className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-lg shadow-md transition font-semibold text-sm sm:text-base">
+        <button onClick={downloadPDF} className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-lg shadow-md transition cursor-pointer font-semibold text-sm sm:text-base">
           Download PDF
         </button>
       </div>
