@@ -133,9 +133,9 @@ export const generateQuestion = async (req, res) => {
       });
     }
 
-    if (user.credits < 30) {
+    if (user.credits < 50) {
       return res.status(400).json({
-        message: "Not enough credits. Minimum 30 required.",
+        message: "Not enough credits. Minimum 50 required.",
       });
     }
 
@@ -214,10 +214,6 @@ Rules:
     ];
 
     const timeMap = [60, 60, 60, 90, 90, 90, 90, 120, 120, 120];
-
-    //  Deduct credits
-    user.credits -= 30;
-    await user.save();
 
     const interview = await InterviewModel.create({
       userId: user._id,
@@ -410,6 +406,13 @@ export const finishInterview = async (req, res) => {
       });
     }
 
+    // Prevent double completion + double deduction
+    if (interview.status === "completed") {
+      return res.status(400).json({
+        message: "Interview already completed",
+      });
+    }
+
     const totalQuestions = interview.questions.length;
 
     if (totalQuestions === 0) {
@@ -435,17 +438,36 @@ export const finishInterview = async (req, res) => {
     const avgCommunication = totalCommunication / totalQuestions;
     const avgCorrectness = totalCorrectness / totalQuestions;
 
-    // save rounded score (optional)
+    //  Save interview result
     interview.finalScore = Number(finalScore.toFixed(1));
     interview.status = "completed";
 
     await interview.save();
+
+    // ============================
+    // DEDUCT CREDITS HERE
+    // ============================
+    const user = await userModel.findById(interview.userId);
+
+    if (user) {
+      if (user.credits < 50) {
+        return res.status(400).json({
+          message: "Not enough credits",
+        });
+      }
+
+      user.credits -= 50;
+      await user.save();
+    }
+
+    // ============================
 
     return res.status(200).json({
       finalScore: Number(finalScore.toFixed(1)),
       confidence: Number(avgConfidence.toFixed(1)),
       communication: Number(avgCommunication.toFixed(1)),
       correctness: Number(avgCorrectness.toFixed(1)),
+      creditsLeft: user?.credits || 0, // ✅ send updated credits
       questionWiseScore: interview.questions.map((q) => ({
         question: q.question,
         score: q.score || 0,

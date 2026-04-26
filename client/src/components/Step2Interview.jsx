@@ -277,7 +277,7 @@ const Step2Interview = ({ interViewData, onFinish }) => {
 
     recognition.lang = "en-US";
     recognition.continuous = true;
-    recognition.interimResults = true; // ✅ LIVE TYPING
+    recognition.interimResults = true; // LIVE TYPING
 
     let silenceTimer;
 
@@ -373,7 +373,7 @@ const Step2Interview = ({ interViewData, onFinish }) => {
       speakText(result.data.feedback);
       setIsSubmitting(false);
 
-      // ✅ AUTO MOVE AFTER FEEDBACK
+      //  AUTO MOVE AFTER FEEDBACK
       setTimeout(() => {
         handleNext();
       }, 1000);
