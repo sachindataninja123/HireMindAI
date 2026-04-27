@@ -1,55 +1,108 @@
 import React, { useState } from "react";
 import { FaArrowLeft, FaCheckCircle } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import { Feature, motion } from "motion/react";
+import { color, Feature, motion } from "motion/react";
+import { ServerURL } from "../App";
+import axios from "axios";
+import { useDispatch } from "react-redux";
+import { setUserData } from "../redux/userSlice";
 
 const Pricing = () => {
   const navigate = useNavigate();
   const [selecedPlan, setSelectedPlan] = useState("free");
+  const [loadingPlan, setLoadingPlan] = useState(null);
+  const dispatch = useDispatch();
 
-const plans = [
-  {
-    id: "free",
-    name: "Free",
-    price: "₹0",
-    credits: 100,
-    description: "Start practicing with AI interviews.",
-    features: [
-      "100 AI Interview Credits",
-      "Basic Performance Report",
-      "Voice Interview Access",
-    ],
-    default: true,
-  },
-  {
-    id: "basic",
-    name: "Starter Pack",
-    price: "₹99",
-    credits: 200,
-    description: "Perfect for consistent interview practice.",
-    features: [
-      "200 AI Interview Credits",
-      "AI Feedback with Suggestions",
-      "Performance Score",
-      "Full Interview History",
-    ],
-    badge: "Most Popular",
-  },
-  {
-    id: "pro",
-    name: "Pro Pack",
-    price: "₹499",
-    credits: 800,
-    description: "Advanced AI coaching for serious preparation.",
-    features: [
-      "800 AI Interview Credits",
-      "Weakness Detection",
-      "Personalized Improvement Plan",
-      "Priority AI Processing",
-    ],
-    badge: "Best Value",
-  },
-];
+  const plans = [
+    {
+      id: "free",
+      name: "Free",
+      price: "₹0",
+      credits: 100,
+      description: "Start practicing with AI interviews.",
+      features: [
+        "100 AI Interview Credits",
+        "Basic Performance Report",
+        "Voice Interview Access",
+      ],
+      default: true,
+    },
+    {
+      id: "basic",
+      name: "Starter Pack",
+      price: "₹99",
+      credits: 200,
+      description: "Perfect for consistent interview practice.",
+      features: [
+        "200 AI Interview Credits",
+        "AI Feedback with Suggestions",
+        "Performance Score",
+        "Full Interview History",
+      ],
+      badge: "Most Popular",
+    },
+    {
+      id: "pro",
+      name: "Pro Pack",
+      price: "₹499",
+      credits: 800,
+      description: "Advanced AI coaching for serious preparation.",
+      features: [
+        "800 AI Interview Credits",
+        "Weakness Detection",
+        "Personalized Improvement Plan",
+        "Priority AI Processing",
+      ],
+      badge: "Best Value",
+    },
+  ];
+
+  const handlePayment = async (plan) => {
+    try {
+      setLoadingPlan(plan.id);
+
+      const result = await axios.post(
+        ServerURL + "/api/payment/order",
+        {
+          planId: plan.id,
+        },
+        { withCredentials: true },
+      );
+      // console.log(result.data);
+
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        amount: result.data.amount,
+        currency: "INR",
+        name: "HireMindAI",
+        description: `${plan.name} - ${plan.credits} Credits`,
+        order_id: result.data.id,
+
+        handler: async function (res) {
+          const verifyPay = await axios.post(
+            ServerURL + "/api/payment/verify",
+            res,
+            { withCredentials: true },
+          );
+          dispatch(setUserData(verifyPay.data.user));
+
+          alert("Payment Successful 🎉 Credits Added!");
+          navigate("/");
+        },
+        theme: {
+          color: "#10b981",
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+
+      setLoadingPlan(null);
+    } catch (error) {
+      console.log(error);
+      setLoadingPlan(null);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-linear-to-br from-gray-50 to-emerald-50 py-16 px-6">
@@ -122,9 +175,22 @@ const plans = [
 
               {!plan.default && (
                 <button
+                  disabled={loadingPlan === plan.id}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!isSelected) {
+                      setSelectedPlan(plan.id);
+                    } else {
+                      handlePayment(plan);
+                    }
+                  }}
                   className={`w-full mt-8 py-3 rounded-xl font-semibold transition ${isSelected ? "bg-emerald-600 text-white hover:opacity-90" : "bg-gray-100 text-gray-700 hover:bg-emerald-50"}`}
                 >
-                  {isSelected ? "Proceed to Pay" : "Select plan"}
+                  {loadingPlan === plan.id
+                    ? "Processing..."
+                    : isSelected
+                      ? "Proceed to Pay"
+                      : "Select plan"}
                 </button>
               )}
             </motion.div>

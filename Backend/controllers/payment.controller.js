@@ -1,10 +1,10 @@
-import paymentModel from "../models/payment.model";
-import userModel from "../models/userModel";
-import razorpay from "../services/razorpay.services";
+import paymentModel from "../models/payment.model.js";
+import userModel from "../models/userModel.js";
+import razorpay from "../services/razorpay.services.js";
 import crypto from "crypto"
 
 const plans = {
-  free: { amount: 0, credits: 50 },
+  free: { amount: 0, credits: 100 },
   basic: { amount: 99, credits: 200 },
   pro: { amount: 499, credits: 800 },
 };
