@@ -9,7 +9,7 @@ import paymentRouter from "../routes/payment.routes.js";
 export const app = express();
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: "https://hiremindai1-client.onrender.com",
     credentials: true,
   }),
 );
