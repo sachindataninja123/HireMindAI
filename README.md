@@ -80,10 +80,23 @@ This platform helps users practice **HR and Technical interviews** based on thei
 - Expand interview domains  
 
 ---
+## .env Setup
+- MONGO_URI=your_mongodb_connection_string
+- JWT_SECRET=your_jwt_secret
+- CLIENT_URL=http://localhost:5173
+
+### Contributing
+Contributions are welcome!
+Feel free to fork the repository and submit a pull request.
+
+### ⭐ Support
+If you like this project, give it a ⭐ on GitHub!
+
 
 ## 📂 Project Setup
 
 ### 1. Clone Repository
 ```bash
 git clone https://github.com/your-username/your-repo-name.git
-cd your-repo-name
+cd your-repo-name`
+
