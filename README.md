@@ -6,6 +6,10 @@ This platform helps users practice **HR and Technical interviews** based on thei
 
 ---
 
+## 🌐 Live Demo
+
+👉 https://hiremindai1-client.onrender.com/
+
 ## 🌟 Features
 
 - 🎯 Role-based interview generation  
